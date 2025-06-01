@@ -32,7 +32,16 @@ def qc_rna_fastq(
     input_dir: str,
     output_dir: str = os.path.join(OUT_PATH, "qc_results")
 ) -> str:
-    """对RNA-seq FASTQ文件进行质量控制分析"""
+    """
+    对RNA-seq FASTQ文件进行质量控制分析
+    
+    参数:
+        input_dir: 包含FASTQ文件的输入目录
+        output_dir: 质控报告输出目录
+        
+    返回:
+        str: 质控分析完成的摘要信息
+    """
     BioToolsValidator.validate_tools_or_raise(COMMON_TOOL_SETS["qc"])
     output_dir = DirectoryManager.ensure_directory(output_dir)
     fastq_files = FileFinder.find_fastq_files(input_dir)
@@ -67,7 +76,19 @@ def trim_rna_adapters(
     min_length: int = 20,
     quality_cutoff: int = 20
 ) -> str:
-    """使用cutadapt对RNA-seq数据进行adapter修剪和质量过滤"""
+    """
+    使用cutadapt对RNA-seq数据进行adapter修剪和质量过滤
+    
+    参数:
+        input_dir: 原始FASTQ文件目录
+        output_dir: 修剪后文件输出目录
+        adapters: adapter序列列表，默认使用Illumina TruSeq adapters
+        min_length: 修剪后最小读长
+        quality_cutoff: 质量分数阈值
+        
+    返回:
+        str: 修剪操作完成的摘要信息
+    """
     BioToolsValidator.validate_tools_or_raise(COMMON_TOOL_SETS["trimming"])
     
     if adapters is None:
@@ -120,7 +141,20 @@ def align_rna_reads(
     threads: int = 8,
     aligner: str = "star"
 ) -> str:
-    """使用STAR对RNA-seq数据进行基因组比对"""
+    """
+    使用STAR对RNA-seq数据进行基因组比对
+    
+    参数:
+        input_dir: 修剪后的FASTQ文件目录
+        output_dir: 比对结果输出目录
+        reference_fa: 参考基因组FASTA文件路径
+        gtf_file: GTF注释文件路径
+        threads: 并行线程数
+        aligner: 比对工具，支持"star"
+        
+    返回:
+        str: 比对操作完成的摘要信息
+    """
     if aligner == "star":
         BioToolsValidator.validate_tools_or_raise(COMMON_TOOL_SETS["star_alignment"])
     else:
@@ -132,7 +166,6 @@ def align_rna_reads(
     return _align_with_star(input_dir, output_dir, reference_fa, gtf_file, threads)
 
 
-@mcp.tool()
 def _align_with_star(input_dir, output_dir, reference_fa, gtf_file, threads):
     """使用STAR进行比对"""
     index_dir = STAR_INDEX_DIR
@@ -197,7 +230,19 @@ def quantify_rna_expression(
     threads: int = 8,
     method: str = "featurecounts"
 ) -> str:
-    """对RNA-seq比对结果进行基因表达定量"""
+    """
+    对RNA-seq比对结果进行基因表达定量
+    
+    参数:
+        input_dir: 包含排序BAM文件的目录
+        gtf_file: GTF注释文件路径
+        output_dir: 定量结果输出目录
+        threads: 并行线程数
+        method: 定量方法，支持"featurecounts"或"htseq"
+        
+    返回:
+        str: 定量操作完成的摘要信息
+    """
     if method == "featurecounts":
         BioToolsValidator.validate_tools_or_raise(COMMON_TOOL_SETS["quantification_featurecounts"])
     else:
