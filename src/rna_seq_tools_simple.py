@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
-"""
-简化版RNA-seq数据处理工具
-不依赖mcp框架，使用bio_utils模块提供通用功能
-"""
-
 import os
 import sys
 from pathlib import Path
 import subprocess
 from typing import List, Dict, Optional
+from mcp.server.fastmcp import FastMCP
 
 # 导入通用工具模块
 from bio_utils import (
     BioToolsValidator, FileFinder, MultiQCRunner, ProcessTracker,
-    DirectoryManager, CommandRunner, COMMON_TOOL_SETS, DEFAULT_ADAPTERS,
-    validate_tools, ensure_output_dir, find_fastq_files,
-    run_command_with_logging
+    DirectoryManager, CommandRunner, COMMON_TOOL_SETS, DEFAULT_ADAPTERS
 )
 
 # 路径配置 - 适应新的项目结构
@@ -25,7 +19,15 @@ REFERENCE_FA = str(BASE_DIR / "data" / "reference" / "genome.fa")
 GTF_FILE = str(BASE_DIR / "data" / "reference" / "annotation.gtf")
 STAR_INDEX_DIR = str(BASE_DIR / "data" / "reference" / "star_index")
 
+# 导出列表
+__all__ = [
+    'mcp', 'qc_rna_fastq', 'trim_rna_adapters', 
+    'align_rna_reads', 'quantify_rna_expression'
+]
 
+mcp = FastMCP("RNA_seq_tools")
+
+@mcp.tool()
 def qc_rna_fastq(
     input_dir: str,
     output_dir: str = os.path.join(OUT_PATH, "qc_results")
@@ -57,7 +59,7 @@ def qc_rna_fastq(
     MultiQCRunner.run_multiqc(output_dir, output_dir)
     return tracker.get_summary(output_dir)
 
-
+@mcp.tool()
 def trim_rna_adapters(
     input_dir: str,
     output_dir: str = os.path.join(OUT_PATH, "trimmed_results"),
@@ -109,6 +111,7 @@ def trim_rna_adapters(
     return tracker.get_summary(output_dir)
 
 
+@mcp.tool()
 def align_rna_reads(
     input_dir: str,
     output_dir: str = os.path.join(OUT_PATH, "aligned_results"),
@@ -129,6 +132,7 @@ def align_rna_reads(
     return _align_with_star(input_dir, output_dir, reference_fa, gtf_file, threads)
 
 
+@mcp.tool()
 def _align_with_star(input_dir, output_dir, reference_fa, gtf_file, threads):
     """使用STAR进行比对"""
     index_dir = STAR_INDEX_DIR
@@ -185,7 +189,7 @@ def _align_with_star(input_dir, output_dir, reference_fa, gtf_file, threads):
     additional_info = {"使用索引": index_dir}
     return tracker.get_summary(output_dir, additional_info)
 
-
+@mcp.tool()
 def quantify_rna_expression(
     input_dir: str,
     gtf_file: str = GTF_FILE,
@@ -236,5 +240,4 @@ def quantify_rna_expression(
 
 
 if __name__ == "__main__":
-    print("RNA-seq数据处理工具 (重构版)")
-    print("使用各个函数进行特定分析") 
+    mcp.run(transports = "stdio")
